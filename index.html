@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <title>アカペラ音取り</title>
+
+    <meta name="theme-color" content="#465a7a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+    <meta
+        name="apple-mobile-web-app-title"
+        content="アカペラ音取り"
+    >
+
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            overscroll-behavior: none;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding:
+                max(12px, env(safe-area-inset-top))
+                12px
+                max(18px, env(safe-area-inset-bottom));
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Hiragino Sans",
+                "Yu Gothic",
+                sans-serif;
+            color: #222;
+            background: linear-gradient(
+                135deg,
+                #f5f7fa,
+                #dfe9f3
+            );
+        }
+
+        button,
+        select,
+        input {
+            font: inherit;
+        }
+
+        button {
+            border: none;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .app {
+            width: min(100%, 680px);
+            margin: 0 auto;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 5px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.78);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+        }
+
+        .tab-button {
+            min-height: 46px;
+            padding: 11px;
+            border-radius: 10px;
+            color: #555;
+            background: transparent;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            color: #fff;
+            background: #465a7a;
+            box-shadow: 0 2px 7px rgba(0, 0, 0, 0.14);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .note-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+        }
+
+        .note-button {
+            min-height: 76px;
+            padding: 9px 6px;
+            border-radius: 14px;
+            color: #222;
+            background: #fff;
+            box-shadow:
+                0 4px 10px rgba(0, 0, 0, 0.12),
+                inset 0 -3px 0 rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition:
+                transform 0.08s,
+                background-color 0.08s,
+                box-shadow 0.08s;
+        }
+
+        .note-button.sharp {
+            color: #fff;
+            background: #3f4652;
+        }
+
+        .note-button.empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .note-button.active {
+            transform: translateY(3px) scale(0.98);
+            background: #dfeaff;
+            box-shadow:
+                0 2px 5px rgba(0, 0, 0, 0.12),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .note-button.sharp.active {
+            background: #637493;
+        }
+
+        .note-name {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .note-symbol {
+            display: block;
+            margin-top: 2px;
+            font-size: 13px;
+            opacity: 0.76;
+        }
+
+        .frequency {
+            display: block;
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.65;
+        }
+
+        .mode-description {
+            margin-top: 10px;
+            color: #666;
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .chord-panel {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09);
+        }
+
+        .selector-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .selector-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #555;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        select {
+            width: 100%;
+            min-height: 46px;
+            padding: 8px 10px;
+            border: 1px solid #ccd2dc;
+            border-radius: 10px;
+            color: #222;
+            background: #fff;
+            font-size: 16px;
+        }
+
+        .chord-information {
+            margin: 16px 0;
+            padding: 16px;
+            border-radius: 13px;
+            background: #f2f5fa;
+            text-align: center;
+        }
+
+        .chord-name {
+            color: #334d76;
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .chord-notes {
+            min-height: 22px;
+            margin-top: 7px;
+            color: #555;
+            font-size: 15px;
+        }
+
+        .chord-ratios {
+            min-height: 19px;
+            margin-top: 5px;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .play-chord-button {
+            width: 100%;
+            min-height: 68px;
+            padding: 13px;
+            border-radius: 14px;
+            color: #fff;
+            background: #465a7a;
+            box-shadow:
+                0 4px 10px rgba(0, 0, 0, 0.15),
+                inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .play-chord-button.active {
+            background: #7b4558;
+            transform: translateY(2px);
+        }
+
+        .preset-title {
+            margin: 18px 0 8px;
+            color: #555;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .preset-button {
+            min-height: 46px;
+            border-radius: 10px;
+            color: #33455f;
+            background: #e7edf6;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .status {
+            min-height: 28px;
+            margin: 15px 0 10px;
+            color: #315ca8;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .settings {
+            padding: 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+        }
+
+        .setting-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 44px;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            touch-action: pan-x;
+        }
+
+        .stop-button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 13px;
+            border-radius: 11px;
+            color: #fff;
+            background: #444;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .install-note {
+            margin-top: 10px;
+            color: #666;
+            font-size: 11px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        @media (max-width: 520px) {
+            .selector-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .preset-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="app">
+
+    <div class="tabs">
+        <button
+            id="noteTab"
+            class="tab-button active"
+            type="button"
+        >
+            音階
+        </button>
+
+        <button
+            id="chordTab"
+            class="tab-button"
+            type="button"
+        >
+            コード
+        </button>
+    </div>
+
+    <section
+        id="notePage"
+        class="page active"
+    >
+        <div
+            id="noteGrid"
+            class="note-grid"
+        ></div>
+
+        <div class="mode-description">
+            A4＝440 Hzを基準とした純正律です．<br>
+            タップするごとに，再生と停止を切り替えます．
+        </div>
+    </section>
+
+    <section
+        id="chordPage"
+        class="page"
+    >
+        <div class="chord-panel">
+
+            <div class="selector-grid">
+                <div>
+                    <label
+                        class="selector-label"
+                        for="rootSelect"
+                    >
+                        ルート音
+                    </label>
+
+                    <select id="rootSelect"></select>
+                </div>
+
+                <div>
+                    <label
+                        class="selector-label"
+                        for="qualitySelect"
+                    >
+                        コードの種類
+                    </label>
+
+                    <select id="qualitySelect"></select>
+                </div>
+            </div>
+
+            <div class="chord-information">
+                <div
+                    id="chordName"
+                    class="chord-name"
+                ></div>
+
+                <div
+                    id="chordNotes"
+                    class="chord-notes"
+                ></div>
+
+                <div
+                    id="chordRatios"
+                    class="chord-ratios"
+                ></div>
+            </div>
+
+            <button
+                id="playChordButton"
+                class="play-chord-button"
+                type="button"
+            >
+                タップでコードを再生
+            </button>
+
+            <div class="preset-title">
+                よく使うコード
+            </div>
+
+            <div
+                id="presetGrid"
+                class="preset-grid"
+            ></div>
+        </div>
+
+        <div class="mode-description">
+            選択したルート音を基準に，構成音を純正比で生成します．
+        </div>
+    </section>
+
+    <div
+        id="status"
+        class="status"
+    >
+        音を選択してください
+    </div>
+
+    <div class="settings">
+        <div class="setting-row">
+            <strong>音量</strong>
+
+            <input
+                id="volumeSlider"
+                type="range"
+                min="0"
+                max="100"
+                value="45"
+            >
+
+            <span id="volumeValue">
+                45％
+            </span>
+        </div>
+    </div>
+
+    <button
+        id="stopAllButton"
+        class="stop-button"
+        type="button"
+    >
+        すべて停止
+    </button>
+
+    <div class="install-note">
+        SafariまたはChromeで開き，ホーム画面へ追加するとアプリとして使用できます．
+    </div>
+</div>
+
+<script>
+    "use strict";
+
+    const A4_FREQUENCY = 440;
+
+    const noteRows = [
+        [
+            {
+                name: "ド",
+                symbol: "C4",
+                frequency: A4_FREQUENCY * 3 / 5,
+                sharp: false
+            },
+            {
+                name: "ド♯",
+                symbol: "C♯4",
+                frequency: A4_FREQUENCY * 5 / 8,
+                sharp: true
+            }
+        ],
+        [
+            {
+                name: "レ",
+                symbol: "D4",
+                frequency: A4_FREQUENCY * 2 / 3,
+                sharp: false
+            },
+            {
+                name: "レ♯",
+                symbol: "D♯4",
+                frequency: A4_FREQUENCY * 45 / 64,
+                sharp: true
+            }
+        ],
+        [
+            {
+                name: "ミ",
+                symbol: "E4",
+                frequency: A4_FREQUENCY * 3 / 4,
+                sharp: false
+            },
+            null
+        ],
+        [
+            {
+                name: "ファ",
+                symbol: "F4",
+                frequency: A4_FREQUENCY * 4 / 5,
+                sharp: false
+            },
+            {
+                name: "ファ♯",
+                symbol: "F♯4",
+                frequency: A4_FREQUENCY * 5 / 6,
+                sharp: true
+            }
+        ],
+        [
+            {
+                name: "ソ",
+                symbol: "G4",
+                frequency: A4_FREQUENCY * 9 / 10,
+                sharp: false
+            },
+            {
+                name: "ソ♯",
+                symbol: "G♯4",
+                frequency: A4_FREQUENCY * 15 / 16,
+                sharp: true
+            }
+        ],
+        [
+            {
+                name: "ラ",
+                symbol: "A4",
+                frequency: A4_FREQUENCY,
+                sharp: false
+            },
+            {
+                name: "ラ♯",
+                symbol: "A♯4",
+                frequency: A4_FREQUENCY * 16 / 15,
+                sharp: true
+            }
+        ],
+        [
+            {
+                name: "シ",
+                symbol: "B4",
+                frequency: A4_FREQUENCY * 9 / 8,
+                sharp: false
+            },
+            null
+        ],
+        [
+            {
+                name: "ド",
+                symbol: "C5",
+                frequency: A4_FREQUENCY * 6 / 5,
+                sharp: false
+            },
+            null
+        ]
+    ];
+
+    const chordRoots = [
+        { name: "C",  frequency: A4_FREQUENCY * 3 / 5 },
+        { name: "C♯", frequency: A4_FREQUENCY * 5 / 8 },
+        { name: "D",  frequency: A4_FREQUENCY * 2 / 3 },
+        { name: "D♯", frequency: A4_FREQUENCY * 45 / 64 },
+        { name: "E",  frequency: A4_FREQUENCY * 3 / 4 },
+        { name: "F",  frequency: A4_FREQUENCY * 4 / 5 },
+        { name: "F♯", frequency: A4_FREQUENCY * 5 / 6 },
+        { name: "G",  frequency: A4_FREQUENCY * 9 / 10 },
+        { name: "G♯", frequency: A4_FREQUENCY * 15 / 16 },
+        { name: "A",  frequency: A4_FREQUENCY },
+        { name: "A♯", frequency: A4_FREQUENCY * 16 / 15 },
+        { name: "B",  frequency: A4_FREQUENCY * 9 / 8 }
+    ];
+
+    const chordTypes = {
+        major: {
+            label: "メジャー",
+            symbol: "",
+            semitones: [0, 4, 7],
+            ratios: [1, 5 / 4, 3 / 2],
+            ratioLabels: ["1", "5/4", "3/2"]
+        },
+        minor: {
+            label: "マイナー",
+            symbol: "m",
+            semitones: [0, 3, 7],
+            ratios: [1, 6 / 5, 3 / 2],
+            ratioLabels: ["1", "6/5", "3/2"]
+        },
+        seventh: {
+            label: "セブンス",
+            symbol: "7",
+            semitones: [0, 4, 7, 10],
+            ratios: [1, 5 / 4, 3 / 2, 7 / 4],
+            ratioLabels: ["1", "5/4", "3/2", "7/4"]
+        },
+        major7: {
+            label: "メジャー7th",
+            symbol: "maj7",
+            semitones: [0, 4, 7, 11],
+            ratios: [1, 5 / 4, 3 / 2, 15 / 8],
+            ratioLabels: ["1", "5/4", "3/2", "15/8"]
+        },
+        minor7: {
+            label: "マイナー7th",
+            symbol: "m7",
+            semitones: [0, 3, 7, 10],
+            ratios: [1, 6 / 5, 3 / 2, 9 / 5],
+            ratioLabels: ["1", "6/5", "3/2", "9/5"]
+        },
+        sus4: {
+            label: "sus4",
+            symbol: "sus4",
+            semitones: [0, 5, 7],
+            ratios: [1, 4 / 3, 3 / 2],
+            ratioLabels: ["1", "4/3", "3/2"]
+        },
+        dim: {
+            label: "ディミニッシュ",
+            symbol: "dim",
+            semitones: [0, 3, 6],
+            ratios: [1, 6 / 5, 45 / 32],
+            ratioLabels: ["1", "6/5", "45/32"]
+        },
+        aug: {
+            label: "オーギュメント",
+            symbol: "aug",
+            semitones: [0, 4, 8],
+            ratios: [1, 5 / 4, 8 / 5],
+            ratioLabels: ["1", "5/4", "8/5"]
+        }
+    };
+
+    const chromaticNames = [
+        "C", "C♯", "D", "D♯", "E", "F",
+        "F♯", "G", "G♯", "A", "A♯", "B"
+    ];
+
+    const harmonicSettings = [
+        { multiple: 1, level: 1.000 },
+        { multiple: 2, level: 0.260 },
+        { multiple: 3, level: 0.120 },
+        { multiple: 4, level: 0.050 },
+        { multiple: 5, level: 0.025 },
+        { multiple: 6, level: 0.012 }
+    ];
+
+    let audioContext = null;
+    let masterGain = null;
+    let lowPassFilter = null;
+    let compressor = null;
+
+    const activeSounds = new Map();
+    let chordPlaying = false;
+    let operationLocked = false;
+
+    const noteTab =
+        document.getElementById("noteTab");
+    const chordTab =
+        document.getElementById("chordTab");
+    const notePage =
+        document.getElementById("notePage");
+    const chordPage =
+        document.getElementById("chordPage");
+    const noteGrid =
+        document.getElementById("noteGrid");
+    const rootSelect =
+        document.getElementById("rootSelect");
+    const qualitySelect =
+        document.getElementById("qualitySelect");
+    const chordName =
+        document.getElementById("chordName");
+    const chordNotes =
+        document.getElementById("chordNotes");
+    const chordRatios =
+        document.getElementById("chordRatios");
+    const playChordButton =
+        document.getElementById("playChordButton");
+    const presetGrid =
+        document.getElementById("presetGrid");
+    const status =
+        document.getElementById("status");
+    const volumeSlider =
+        document.getElementById("volumeSlider");
+    const volumeValue =
+        document.getElementById("volumeValue");
+    const stopAllButton =
+        document.getElementById("stopAllButton");
+
+    async function initializeAudio() {
+        if (audioContext === null) {
+            const AudioContextClass =
+                window.AudioContext ||
+                window.webkitAudioContext;
+
+            if (!AudioContextClass) {
+                alert(
+                    "このブラウザはWeb Audio APIに対応していません．"
+                );
+                return false;
+            }
+
+            audioContext =
+                new AudioContextClass();
+
+            masterGain =
+                audioContext.createGain();
+
+            lowPassFilter =
+                audioContext.createBiquadFilter();
+
+            compressor =
+                audioContext.createDynamicsCompressor();
+
+            lowPassFilter.type = "lowpass";
+            lowPassFilter.frequency.value = 4300;
+            lowPassFilter.Q.value = 0.65;
+
+            compressor.threshold.value = -24;
+            compressor.knee.value = 18;
+            compressor.ratio.value = 5;
+            compressor.attack.value = 0.004;
+            compressor.release.value = 0.20;
+
+            masterGain.gain.value =
+                Number(volumeSlider.value) /
+                100 *
+                0.28;
+
+            masterGain.connect(lowPassFilter);
+            lowPassFilter.connect(compressor);
+            compressor.connect(audioContext.destination);
+        }
+
+        if (audioContext.state !== "running") {
+            try {
+                await audioContext.resume();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        return audioContext.state === "running";
+    }
+
+    function getChromaticNoteName(
+        rootIndex,
+        semitoneOffset
+    ) {
+        const absoluteIndex =
+            rootIndex + semitoneOffset;
+
+        const pitchClass =
+            ((absoluteIndex % 12) + 12) % 12;
+
+        const octave =
+            4 + Math.floor(absoluteIndex / 12);
+
+        return chromaticNames[pitchClass] + octave;
+    }
+
+    function updateVoiceNormalization() {
+        const voiceCount =
+            activeSounds.size;
+
+        if (
+            voiceCount === 0 ||
+            audioContext === null
+        ) {
+            return;
+        }
+
+        const normalization =
+            1 / Math.sqrt(voiceCount);
+
+        const now =
+            audioContext.currentTime;
+
+        activeSounds.forEach(sound => {
+            sound.voiceGain.gain
+                .cancelScheduledValues(now);
+
+            sound.voiceGain.gain
+                .setTargetAtTime(
+                    sound.baseLevel *
+                        normalization,
+                    now,
+                    0.02
+                );
+        });
+    }
+
+    function updateStatus() {
+        if (activeSounds.size === 0) {
+            status.textContent =
+                chordPage.classList.contains("active")
+                    ? "コードを選択してください"
+                    : "音を選択してください";
+            return;
+        }
+
+        const names =
+            Array.from(
+                activeSounds.values()
+            ).map(sound => sound.displayName);
+
+        status.textContent =
+            [...new Set(names)].join(" ＋ ");
+    }
+
+    async function startSound(
+        soundId,
+        frequency,
+        displayName,
+        baseLevel = 0.40
+    ) {
+        if (activeSounds.has(soundId)) {
+            return true;
+        }
+
+        const initialized =
+            await initializeAudio();
+
+        if (!initialized) {
+            status.textContent =
+                "音声を開始できませんでした．もう一度タップしてください．";
+            return false;
+        }
+
+        const now =
+            audioContext.currentTime;
+
+        const voiceGain =
+            audioContext.createGain();
+
+        const envelopeGain =
+            audioContext.createGain();
+
+        voiceGain.gain.setValueAtTime(
+            baseLevel,
+            now
+        );
+
+        envelopeGain.gain.setValueAtTime(
+            0.0001,
+            now
+        );
+
+        envelopeGain.gain
+            .exponentialRampToValueAtTime(
+                1.0,
+                now + 0.015
+            );
+
+        voiceGain.connect(envelopeGain);
+        envelopeGain.connect(masterGain);
+
+        const oscillators = [];
+
+        harmonicSettings.forEach(setting => {
+            const oscillator =
+                audioContext.createOscillator();
+
+            const harmonicGain =
+                audioContext.createGain();
+
+            oscillator.type = "sine";
+
+            oscillator.frequency
+                .setValueAtTime(
+                    frequency *
+                        setting.multiple,
+                    now
+                );
+
+            harmonicGain.gain
+                .setValueAtTime(
+                    setting.level,
+                    now
+                );
+
+            oscillator.connect(harmonicGain);
+            harmonicGain.connect(voiceGain);
+            oscillator.start(now);
+
+            oscillators.push(oscillator);
+        });
+
+        activeSounds.set(
+            soundId,
+            {
+                oscillators,
+                voiceGain,
+                envelopeGain,
+                baseLevel,
+                displayName
+            }
+        );
+
+        updateVoiceNormalization();
+        updateStatus();
+
+        return true;
+    }
+
+    function stopSound(soundId) {
+        const sound =
+            activeSounds.get(soundId);
+
+        if (
+            sound === undefined ||
+            audioContext === null
+        ) {
+            return;
+        }
+
+        const now =
+            audioContext.currentTime;
+
+        sound.envelopeGain.gain
+            .cancelScheduledValues(now);
+
+        sound.envelopeGain.gain
+            .setValueAtTime(
+                Math.max(
+                    sound.envelopeGain.gain.value,
+                    0.0001
+                ),
+                now
+            );
+
+        sound.envelopeGain.gain
+            .exponentialRampToValueAtTime(
+                0.0001,
+                now + 0.03
+            );
+
+        sound.oscillators.forEach(oscillator => {
+            try {
+                oscillator.stop(now + 0.04);
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        activeSounds.delete(soundId);
+
+        updateVoiceNormalization();
+        updateStatus();
+    }
+
+    function stopAllSounds() {
+        const soundIds =
+            Array.from(activeSounds.keys());
+
+        soundIds.forEach(stopSound);
+
+        document
+            .querySelectorAll(
+                ".note-button.active"
+            )
+            .forEach(button => {
+                button.classList.remove("active");
+            });
+
+        chordPlaying = false;
+
+        playChordButton.classList.remove("active");
+        playChordButton.textContent =
+            "タップでコードを再生";
+
+        updateStatus();
+    }
+
+    let noteButtonIndex = 0;
+
+    noteRows.forEach(row => {
+        row.forEach(note => {
+            if (note === null) {
+                const empty =
+                    document.createElement("div");
+
+                empty.className =
+                    "note-button empty";
+
+                noteGrid.appendChild(empty);
+                return;
+            }
+
+            const soundId =
+                `note-${noteButtonIndex}`;
+
+            noteButtonIndex++;
+
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+
+            button.className =
+                note.sharp
+                    ? "note-button sharp"
+                    : "note-button";
+
+            button.innerHTML = `
+                <span class="note-name">
+                    ${note.name}
+                </span>
+                <span class="note-symbol">
+                    ${note.symbol}
+                </span>
+                <span class="frequency">
+                    ${note.frequency.toFixed(2)} Hz
+                </span>
+            `;
+
+            button.addEventListener(
+                "click",
+                async () => {
+                    if (operationLocked) {
+                        return;
+                    }
+
+                    operationLocked = true;
+
+                    try {
+                        if (
+                            activeSounds.has(soundId)
+                        ) {
+                            stopSound(soundId);
+                            button.classList.remove(
+                                "active"
+                            );
+                        } else {
+                            const started =
+                                await startSound(
+                                    soundId,
+                                    note.frequency,
+                                    note.symbol,
+                                    0.42
+                                );
+
+                            if (started) {
+                                button.classList.add(
+                                    "active"
+                                );
+                            }
+                        }
+                    } finally {
+                        operationLocked = false;
+                    }
+                }
+            );
+
+            noteGrid.appendChild(button);
+        });
+    });
+
+    chordRoots.forEach((root, index) => {
+        const option =
+            document.createElement("option");
+
+        option.value = String(index);
+        option.textContent = root.name;
+
+        rootSelect.appendChild(option);
+    });
+
+    Object.entries(chordTypes).forEach(
+        ([key, chordType]) => {
+            const option =
+                document.createElement("option");
+
+            option.value = key;
+            option.textContent =
+                chordType.label;
+
+            qualitySelect.appendChild(option);
+        }
+    );
+
+    function getSelectedChord() {
+        const rootIndex =
+            Number(rootSelect.value);
+
+        const root =
+            chordRoots[rootIndex];
+
+        const type =
+            chordTypes[qualitySelect.value];
+
+        return {
+            name: root.name + type.symbol,
+
+            frequencies:
+                type.ratios.map(
+                    ratio =>
+                        root.frequency * ratio
+                ),
+
+            noteNames:
+                type.semitones.map(
+                    semitone =>
+                        getChromaticNoteName(
+                            rootIndex,
+                            semitone
+                        )
+                ),
+
+            ratioLabels:
+                type.ratioLabels
+        };
+    }
+
+    function updateChordInformation() {
+        const chord =
+            getSelectedChord();
+
+        chordName.textContent =
+            chord.name;
+
+        chordNotes.textContent =
+            chord.noteNames.join(" ＋ ");
+
+        chordRatios.textContent =
+            "周波数比　" +
+            chord.ratioLabels.join(" ： ");
+    }
+
+    rootSelect.addEventListener(
+        "change",
+        () => {
+            stopAllSounds();
+            updateChordInformation();
+        }
+    );
+
+    qualitySelect.addEventListener(
+        "change",
+        () => {
+            stopAllSounds();
+            updateChordInformation();
+        }
+    );
+
+    playChordButton.addEventListener(
+        "click",
+        async () => {
+            if (operationLocked) {
+                return;
+            }
+
+            operationLocked = true;
+
+            try {
+                if (chordPlaying) {
+                    stopAllSounds();
+                    return;
+                }
+
+                stopAllSounds();
+
+                const chord =
+                    getSelectedChord();
+
+                const baseLevel =
+                    chord.frequencies.length >= 4
+                        ? 0.34
+                        : 0.38;
+
+                let allStarted = true;
+
+                for (
+                    let index = 0;
+                    index < chord.frequencies.length;
+                    index++
+                ) {
+                    const started =
+                        await startSound(
+                            `chord-${index}`,
+                            chord.frequencies[index],
+                            chord.name,
+                            baseLevel
+                        );
+
+                    if (!started) {
+                        allStarted = false;
+                        break;
+                    }
+                }
+
+                if (!allStarted) {
+                    stopAllSounds();
+                    return;
+                }
+
+                chordPlaying = true;
+
+                playChordButton.classList.add(
+                    "active"
+                );
+
+                playChordButton.textContent =
+                    "タップでコードを停止";
+            } finally {
+                operationLocked = false;
+            }
+        }
+    );
+
+    const chordPresets = [
+        { name: "C",  rootIndex: 0, type: "major" },
+        { name: "Cm", rootIndex: 0, type: "minor" },
+        { name: "F",  rootIndex: 5, type: "major" },
+        { name: "G",  rootIndex: 7, type: "major" },
+        { name: "G7", rootIndex: 7, type: "seventh" },
+        { name: "Am", rootIndex: 9, type: "minor" },
+        { name: "Dm", rootIndex: 2, type: "minor" },
+        { name: "Em", rootIndex: 4, type: "minor" }
+    ];
+
+    chordPresets.forEach(preset => {
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+        button.className = "preset-button";
+        button.textContent = preset.name;
+
+        button.addEventListener(
+            "click",
+            () => {
+                stopAllSounds();
+
+                rootSelect.value =
+                    String(preset.rootIndex);
+
+                qualitySelect.value =
+                    preset.type;
+
+                updateChordInformation();
+            }
+        );
+
+        presetGrid.appendChild(button);
+    });
+
+    function switchPage(pageName) {
+        stopAllSounds();
+
+        const showNotePage =
+            pageName === "note";
+
+        noteTab.classList.toggle(
+            "active",
+            showNotePage
+        );
+
+        chordTab.classList.toggle(
+            "active",
+            !showNotePage
+        );
+
+        notePage.classList.toggle(
+            "active",
+            showNotePage
+        );
+
+        chordPage.classList.toggle(
+            "active",
+            !showNotePage
+        );
+
+        updateStatus();
+    }
+
+    noteTab.addEventListener(
+        "click",
+        () => switchPage("note")
+    );
+
+    chordTab.addEventListener(
+        "click",
+        () => switchPage("chord")
+    );
+
+    volumeSlider.addEventListener(
+        "input",
+        () => {
+            const volume =
+                Number(volumeSlider.value);
+
+            volumeValue.textContent =
+                `${volume}％`;
+
+            if (
+                audioContext !== null &&
+                masterGain !== null
+            ) {
+                masterGain.gain
+                    .setTargetAtTime(
+                        volume /
+                            100 *
+                            0.28,
+                        audioContext.currentTime,
+                        0.01
+                    );
+            }
+        }
+    );
+
+    stopAllButton.addEventListener(
+        "click",
+        stopAllSounds
+    );
+
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+            if (document.hidden) {
+                stopAllSounds();
+            }
+        }
+    );
+
+    window.addEventListener(
+        "pagehide",
+        stopAllSounds
+    );
+
+    updateChordInformation();
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener(
+            "load",
+            () => {
+                navigator.serviceWorker
+                    .register(
+                        "./service-worker.js"
+                    )
+                    .catch(error => {
+                        console.error(
+                            "Service Workerの登録に失敗しました．",
+                            error
+                        );
+                    });
+            }
+        );
+    }
+</script>
+</body>
+</html>
