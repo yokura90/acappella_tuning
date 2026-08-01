@@ -372,11 +372,6 @@
             id="noteGrid"
             class="note-grid"
         ></div>
-
-        <div class="mode-description">
-            A4＝440 Hzを基準とした純正律です．<br>
-            タップするごとに，再生と停止を切り替えます．
-        </div>
     </section>
 
     <section
@@ -443,10 +438,6 @@
                 class="preset-grid"
             ></div>
         </div>
-
-        <div class="mode-description">
-            選択したルート音を基準に，構成音を純正比で生成します．
-        </div>
     </section>
 
     <div
@@ -481,10 +472,6 @@
     >
         すべて停止
     </button>
-
-    <div class="install-note">
-        SafariまたはChromeで開き，ホーム画面へ追加するとアプリとして使用できます．
-    </div>
 </div>
 
 <script>
@@ -492,18 +479,27 @@
 
     const A4_FREQUENCY = 440;
 
+    /*
+     * 単音モードはA4＝440 Hzを基準とした十二平均律を使用する．
+     * 音域はC4からC5までとする．
+     */
+    function equalTemperamentFrequency(midi) {
+        return A4_FREQUENCY *
+            Math.pow(2, (midi - 69) / 12);
+    }
+
     const noteRows = [
         [
             {
                 name: "ド",
                 symbol: "C4",
-                frequency: A4_FREQUENCY * 3 / 5,
+                frequency: equalTemperamentFrequency(60),
                 sharp: false
             },
             {
                 name: "ド♯",
                 symbol: "C♯4",
-                frequency: A4_FREQUENCY * 5 / 8,
+                frequency: equalTemperamentFrequency(61),
                 sharp: true
             }
         ],
@@ -511,13 +507,13 @@
             {
                 name: "レ",
                 symbol: "D4",
-                frequency: A4_FREQUENCY * 2 / 3,
+                frequency: equalTemperamentFrequency(62),
                 sharp: false
             },
             {
                 name: "レ♯",
                 symbol: "D♯4",
-                frequency: A4_FREQUENCY * 45 / 64,
+                frequency: equalTemperamentFrequency(63),
                 sharp: true
             }
         ],
@@ -525,7 +521,7 @@
             {
                 name: "ミ",
                 symbol: "E4",
-                frequency: A4_FREQUENCY * 3 / 4,
+                frequency: equalTemperamentFrequency(64),
                 sharp: false
             },
             null
@@ -534,13 +530,13 @@
             {
                 name: "ファ",
                 symbol: "F4",
-                frequency: A4_FREQUENCY * 4 / 5,
+                frequency: equalTemperamentFrequency(65),
                 sharp: false
             },
             {
                 name: "ファ♯",
                 symbol: "F♯4",
-                frequency: A4_FREQUENCY * 5 / 6,
+                frequency: equalTemperamentFrequency(66),
                 sharp: true
             }
         ],
@@ -548,13 +544,13 @@
             {
                 name: "ソ",
                 symbol: "G4",
-                frequency: A4_FREQUENCY * 9 / 10,
+                frequency: equalTemperamentFrequency(67),
                 sharp: false
             },
             {
                 name: "ソ♯",
                 symbol: "G♯4",
-                frequency: A4_FREQUENCY * 15 / 16,
+                frequency: equalTemperamentFrequency(68),
                 sharp: true
             }
         ],
@@ -562,13 +558,13 @@
             {
                 name: "ラ",
                 symbol: "A4",
-                frequency: A4_FREQUENCY,
+                frequency: equalTemperamentFrequency(69),
                 sharp: false
             },
             {
                 name: "ラ♯",
                 symbol: "A♯4",
-                frequency: A4_FREQUENCY * 16 / 15,
+                frequency: equalTemperamentFrequency(70),
                 sharp: true
             }
         ],
@@ -576,7 +572,7 @@
             {
                 name: "シ",
                 symbol: "B4",
-                frequency: A4_FREQUENCY * 9 / 8,
+                frequency: equalTemperamentFrequency(71),
                 sharp: false
             },
             null
@@ -585,27 +581,48 @@
             {
                 name: "ド",
                 symbol: "C5",
-                frequency: A4_FREQUENCY * 6 / 5,
+                frequency: equalTemperamentFrequency(72),
                 sharp: false
             },
             null
         ]
     ];
 
+    /*
+     * コードのルート音は，A3～G♯4のピッチパイプ範囲を基準とする．
+     * 各コードの構成音は純正律で生成し，A3～A4の1オクターブ内へ折り返す．
+     */
+    const PITCH_PIPE_LOW = 220.0;
+    const PITCH_PIPE_HIGH = 440.0;
+
     const chordRoots = [
-        { name: "C",  frequency: A4_FREQUENCY * 3 / 5 },
-        { name: "C♯", frequency: A4_FREQUENCY * 5 / 8 },
-        { name: "D",  frequency: A4_FREQUENCY * 2 / 3 },
-        { name: "D♯", frequency: A4_FREQUENCY * 45 / 64 },
-        { name: "E",  frequency: A4_FREQUENCY * 3 / 4 },
-        { name: "F",  frequency: A4_FREQUENCY * 4 / 5 },
-        { name: "F♯", frequency: A4_FREQUENCY * 5 / 6 },
-        { name: "G",  frequency: A4_FREQUENCY * 9 / 10 },
-        { name: "G♯", frequency: A4_FREQUENCY * 15 / 16 },
-        { name: "A",  frequency: A4_FREQUENCY },
-        { name: "A♯", frequency: A4_FREQUENCY * 16 / 15 },
-        { name: "B",  frequency: A4_FREQUENCY * 9 / 8 }
+        { name: "C",  frequency: equalTemperamentFrequency(60) },
+        { name: "C♯", frequency: equalTemperamentFrequency(61) },
+        { name: "D",  frequency: equalTemperamentFrequency(62) },
+        { name: "D♯", frequency: equalTemperamentFrequency(63) },
+        { name: "E",  frequency: equalTemperamentFrequency(64) },
+        { name: "F",  frequency: equalTemperamentFrequency(65) },
+        { name: "F♯", frequency: equalTemperamentFrequency(66) },
+        { name: "G",  frequency: equalTemperamentFrequency(67) },
+        { name: "G♯", frequency: equalTemperamentFrequency(68) },
+        { name: "A",  frequency: equalTemperamentFrequency(57) },
+        { name: "A♯", frequency: equalTemperamentFrequency(58) },
+        { name: "B",  frequency: equalTemperamentFrequency(59) }
     ];
+
+    function wrapToPitchPipeRange(frequency) {
+        let wrapped = frequency;
+
+        while (wrapped < PITCH_PIPE_LOW) {
+            wrapped *= 2;
+        }
+
+        while (wrapped >= PITCH_PIPE_HIGH) {
+            wrapped /= 2;
+        }
+
+        return wrapped;
+    }
 
     const chordTypes = {
         major: {
@@ -671,7 +688,26 @@
         "F♯", "G", "G♯", "A", "A♯", "B"
     ];
 
-    const harmonicSettings = [
+    /*
+     * 単音用の倍音構成．
+     * コード用よりも倍音を強くし，音程を聞き取りやすくする．
+     */
+    const singleNoteHarmonics = [
+        { multiple: 1, level: 1.000 },
+        { multiple: 2, level: 0.450 },
+        { multiple: 3, level: 0.250 },
+        { multiple: 4, level: 0.140 },
+        { multiple: 5, level: 0.075 },
+        { multiple: 6, level: 0.040 },
+        { multiple: 7, level: 0.022 },
+        { multiple: 8, level: 0.012 }
+    ];
+
+    /*
+     * コード用の倍音構成．
+     * 純正律の響きを保ち，濁りやうなりを抑える．
+     */
+    const chordHarmonics = [
         { multiple: 1, level: 1.000 },
         { multiple: 2, level: 0.260 },
         { multiple: 3, level: 0.120 },
@@ -847,7 +883,8 @@
         soundId,
         frequency,
         displayName,
-        baseLevel = 0.40
+        baseLevel = 0.40,
+        harmonicProfile = chordHarmonics
     ) {
         if (activeSounds.has(soundId)) {
             return true;
@@ -892,7 +929,7 @@
 
         const oscillators = [];
 
-        harmonicSettings.forEach(setting => {
+        harmonicProfile.forEach(setting => {
             const oscillator =
                 audioContext.createOscillator();
 
@@ -1072,7 +1109,8 @@
                                     soundId,
                                     note.frequency,
                                     note.symbol,
-                                    0.42
+                                    0.38,
+                                    singleNoteHarmonics
                                 );
 
                             if (started) {
@@ -1114,6 +1152,25 @@
         }
     );
 
+    function frequencyToDisplayName(frequency) {
+        const midi =
+            Math.round(
+                69 +
+                12 *
+                Math.log2(
+                    frequency / A4_FREQUENCY
+                )
+            );
+
+        const pitchClass =
+            ((midi % 12) + 12) % 12;
+
+        const octave =
+            Math.floor(midi / 12) - 1;
+
+        return chromaticNames[pitchClass] + octave;
+    }
+
     function getSelectedChord() {
         const rootIndex =
             Number(rootSelect.value);
@@ -1124,24 +1181,26 @@
         const type =
             chordTypes[qualitySelect.value];
 
+        const frequencies =
+            type.ratios
+                .map(
+                    ratio =>
+                        wrapToPitchPipeRange(
+                            root.frequency * ratio
+                        )
+                )
+                .sort((a, b) => a - b);
+
         return {
             name: root.name + type.symbol,
-
-            frequencies:
-                type.ratios.map(
-                    ratio =>
-                        root.frequency * ratio
-                ),
-
+            frequencies,
             noteNames:
-                type.semitones.map(
-                    semitone =>
-                        getChromaticNoteName(
-                            rootIndex,
-                            semitone
+                frequencies.map(
+                    frequency =>
+                        frequencyToDisplayName(
+                            frequency
                         )
                 ),
-
             ratioLabels:
                 type.ratioLabels
         };
@@ -1215,7 +1274,8 @@
                             `chord-${index}`,
                             chord.frequencies[index],
                             chord.name,
-                            baseLevel
+                            baseLevel,
+                            chordHarmonics
                         );
 
                     if (!started) {
