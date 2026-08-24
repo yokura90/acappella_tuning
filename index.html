@@ -847,11 +847,15 @@
             lowPassFilter.frequency.value = 4300;
             lowPassFilter.Q.value = 0.65;
 
-            compressor.threshold.value = -24;
-            compressor.knee.value = 18;
-            compressor.ratio.value = 5;
-            compressor.attack.value = 0.004;
-            compressor.release.value = 0.20;
+            /*
+             * 通常の音量は圧縮せず，大きなピークだけを抑える．
+             * スマートフォンでも声に埋もれにくい出力を確保する．
+             */
+            compressor.threshold.value = -10;
+            compressor.knee.value = 4;
+            compressor.ratio.value = 12;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.15;
 
             masterGain.gain.value =
                 MASTER_OUTPUT_GAIN;
