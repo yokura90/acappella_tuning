@@ -5,7 +5,7 @@
  * v2，v3，v4のように変更する．
  */
 const CACHE_NAME =
-    "acappella-tone-cache-v2";
+    "acappella-tone-cache-v3";
 
 const APP_FILES = [
     "./",
