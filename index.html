@@ -527,6 +527,7 @@
 
     const A4_FREQUENCY = 440;
     const MASTER_OUTPUT_GAIN = 0.42;
+    const FINAL_OUTPUT_GAIN = 1.50;
     const MIN_OCTAVE_SHIFT = -2;
     const MAX_OCTAVE_SHIFT = 2;
 
@@ -772,6 +773,7 @@
     let masterGain = null;
     let lowPassFilter = null;
     let compressor = null;
+    let finalOutputGain = null;
 
     const activeSounds = new Map();
     let chordPlaying = false;
@@ -838,6 +840,9 @@
             compressor =
                 audioContext.createDynamicsCompressor();
 
+            finalOutputGain =
+                audioContext.createGain();
+
             lowPassFilter.type = "lowpass";
             lowPassFilter.frequency.value = 4300;
             lowPassFilter.Q.value = 0.65;
@@ -851,9 +856,15 @@
             masterGain.gain.value =
                 MASTER_OUTPUT_GAIN;
 
+            finalOutputGain.gain.value =
+                FINAL_OUTPUT_GAIN;
+
             masterGain.connect(lowPassFilter);
             lowPassFilter.connect(compressor);
-            compressor.connect(audioContext.destination);
+            compressor.connect(finalOutputGain);
+            finalOutputGain.connect(
+                audioContext.destination
+            );
         }
 
         if (audioContext.state !== "running") {
